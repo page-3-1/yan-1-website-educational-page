@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Archive Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #020617;
+      color: #e5e7eb;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .option {
+      height: 160px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #0f172a, #020617);
+      border: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .option:hover {
+      transform: scale(1.02);
+      background: linear-gradient(135deg, #1e293b, #020617);
+    }
+
+    .status {
+      text-align: center;
+      font-size: 0.95rem;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="option" onclick="goToEducational()">Educational</div>
+    <div class="status" id="status">Loading archive data…</div>
+  </div>
+
+  <script>
+    let archiveUrls = [];
+
+    async function loadData() {
+      try {
+        const res = await fetch("data.json");
+        if (!res.ok) throw new Error("Failed to load data.json");
+
+        const data = await res.json();
+
+        archiveUrls = data
+          .map(item => item.archive_profile_url)
+          .filter(Boolean);
+
+        document.getElementById("status").textContent =
+          `Loaded ${archiveUrls.length} archive profiles`;
+
+        // Store in localStorage for use in educational.html
+        localStorage.setItem("archive_profile_urls", JSON.stringify(archiveUrls));
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("status").textContent =
+          "Failed to load archive data";
+      }
+    }
+
+    function goToEducational() {
+      if (!archiveUrls.length) {
+        alert("Archive data not loaded yet");
+        return;
+      }
+      window.location.href = "educational.html";
+    }
+
+    // Load data when page opens
+    loadData();
+  </script>
+
+</body>
+</html>

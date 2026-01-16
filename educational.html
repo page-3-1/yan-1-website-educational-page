@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Profiles Archive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #020617;
+  color: #e5e7eb;
+  font-family: system-ui, sans-serif;
+  padding: 2rem;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.grid {
+  display: grid;
+  gap: 1.2rem;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  transition: transform 0.15s ease;
+  position: relative;
+}
+
+.card:hover {
+  transform: scale(1.03);
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid #334155;
+  object-fit: cover;
+  background: #1e293b;
+  cursor: pointer;
+}
+
+.username {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #38bdf8;
+  word-break: break-word;
+  text-align: center;
+}
+
+button {
+  padding: 0.4rem 0.8rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  width: 100%;
+}
+
+.full-btn {
+  background: #334155;
+}
+
+/* fullscreen image viewer */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: black;
+  display: none;
+  z-index: 9999;
+}
+
+.overlay img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(220, 38, 38, 0.8);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10000;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.header h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.search-container {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.search-container input, .search-container button {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #334155;
+}
+
+.search-container input {
+  background: #0f172a;
+  color: #e5e7eb;
+  width: 300px;
+}
+
+.search-container button {
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+.back-btn {
+  background: #334155;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.fullscreen-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.share-icon {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.load-more {
+  display: block;
+  margin: 1rem auto;
+  padding: 0.7rem 1.5rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="header">
+    <h2><span>👤</span> ProfileX</h2>
+    <p>Explore. Know others. Express yourself.</p>
+    <button class="back-btn" onclick="goToIndex()">← Back</button>
+  </div>
+  
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search by username">
+    <button onclick="performSearch()">Search</button>
+  </div>
+  <button class="back-btn" onclick="showAllProfiles()" style="margin: 0.5rem auto;">Back to Profiles</button>
+  
+  <div id="grid" class="grid"></div>
+  <button id="loadMoreBtn" class="load-more" style="display: none;" onclick="loadNextBatch()">Load More</button>
+</div>
+
+<!-- Fullscreen Avatar Viewer -->
+<div class="overlay" id="overlay">
+  <button class="close" onclick="closeImage()">✕</button>
+  <img id="fullImage">
+</div>
+
+<script>
+const grid = document.getElementById("grid");
+const overlay = document.getElementById("overlay");
+const fullImage = document.getElementById("fullImage");
+const searchInput = document.getElementById("searchInput");
+const loadMoreBtn = document.getElementById("loadMoreBtn");
+
+let allProfiles = [];
+let currentProfiles = [];
+const PAGE_SIZE = 30;
+let currentPage = 0;
+
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+  return array;
+}
+
+function openImage(src){
+  fullImage.src = src;
+  overlay.style.display = "block";
+}
+
+function closeImage(){
+  fullImage.src = "";
+  overlay.style.display = "none";
+}
+
+function goToIndex() {
+  window.location.href = "index.html";
+}
+
+function showAllProfiles() {
+  currentProfiles = [...allProfiles];
+  currentPage = 0;
+  grid.innerHTML = '';
+  loadNextBatch();
+  loadMoreBtn.style.display = currentProfiles.length > PAGE_SIZE ? 'block' : 'none';
+}
+
+function performSearch() {
+  const searchTerm = searchInput.value.toLowerCase();
+  if (!searchTerm) {
+    showAllProfiles();
+    return;
+  }
+  
+  currentProfiles = allProfiles.filter(profile => 
+    profile.username.toLowerCase().includes(searchTerm)
+  );
+  
+  currentPage = 0;
+  grid.innerHTML = '';
+  loadNextBatch();
+  loadMoreBtn.style.display = currentProfiles.length > PAGE_SIZE ? 'block' : 'none';
+}
+
+function loadNextBatch() {
+  const start = currentPage * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  const batch = currentProfiles.slice(start, end);
+  
+  renderProfiles(batch);
+  
+  currentPage++;
+  
+  if (end >= currentProfiles.length) {
+    loadMoreBtn.style.display = 'none';
+  }
+}
+
+function shareProfile(username) {
+  const shareUrl = `https://yan-1-related-1.github.io/yan-1-website-shared-links-redirecting/archive-profile-page-shared-links-redirecting.html?username=${username}`;
+  
+  if (navigator.share) {
+    navigator.share({
+      title: `Check out ${username}'s profile`,
+      url: shareUrl
+    }).catch(error => console.log('Sharing failed', error));
+  } else {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert(`Link copied to clipboard for ${username}`);
+    }).catch(err => {
+      console.log('Failed to copy link', err);
+    });
+  }
+}
+
+function renderProfiles(profiles) {
+  profiles.forEach(profile => {
+    const { url, username, avatarSrc, avatar1, avatar2 } = profile;
+    
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const img = document.createElement("img");
+    img.className = "avatar";
+    img.loading = "lazy"; // Native lazy loading
+    img.src = avatar1;
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = avatar2;
+    };
+    img.onerror = () => {
+      img.src = "https://archive.org/images/glogo.png";
+    };
+
+    const name = document.createElement("div");
+    name.className = "username";
+    name.textContent = username;
+
+    const openBtn = document.createElement("button");
+    openBtn.textContent = "Open";
+    openBtn.onclick = () => {
+      localStorage.setItem("current_profile_url", url);
+      localStorage.setItem("current_profile_avatar", avatarSrc);
+      window.location.href = "items.html";
+    };
+
+    const shareIcon = document.createElement("button");
+    shareIcon.className = "share-icon";
+    shareIcon.textContent = "➤";
+    shareIcon.onclick = (e) => {
+      e.stopPropagation();
+      shareProfile(username);
+    };
+
+    const fullscreenIcon = document.createElement("button");
+    fullscreenIcon.className = "fullscreen-icon";
+    fullscreenIcon.textContent = "⛶";
+    fullscreenIcon.onclick = (e) => {
+      e.stopPropagation();
+      openImage(avatarSrc);
+    };
+
+    card.appendChild(img);
+    card.appendChild(name);
+    card.appendChild(openBtn);
+    card.appendChild(shareIcon);
+    card.appendChild(fullscreenIcon);
+    grid.appendChild(card);
+  });
+}
+
+const stored = localStorage.getItem("archive_profile_urls");
+
+if (stored) {
+  let urls = JSON.parse(stored);
+  urls = shuffle(urls);
+
+  allProfiles = urls.map(url => {
+    const match = url.match(/@([^/]+)/);
+    const username = match ? match[1] : "unknown";
+
+    const avatar1 = `https://archive.org/services/img/@${username}`;
+    const avatar2 = `https://archive.org/services/img/@${username}/uploads`;
+    const fallback = "https://archive.org/images/glogo.png";
+    
+    return { 
+      url, 
+      username, 
+      avatarSrc: avatar1,
+      avatar1,
+      avatar2,
+      fallback
+    };
+  });
+  
+  showAllProfiles();
+}
+</script>
+
+</body>
+</html>
