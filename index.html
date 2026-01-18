@@ -51,9 +51,24 @@
       font-size: 0.95rem;
       opacity: 0.85;
     }
+    
+    /* Home button styles */
+    #homeButton {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.5rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: white;
+      z-index: 100;
+    }
   </style>
 </head>
 <body>
+  <button id="homeButton">🏠</button>
 
   <div class="container">
     <div class="option" onclick="goToEducational()">Educational</div>
@@ -62,6 +77,11 @@
 
   <script>
     let archiveUrls = [];
+
+    // Home button functionality
+    document.getElementById("homeButton").addEventListener("click", () => {
+      window.location.href = "https://yan-shun-081.github.io/yan-1-website.com/";
+    });
 
     async function loadData() {
       try {
